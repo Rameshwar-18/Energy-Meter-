@@ -2,8 +2,14 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Rewrite keeps ?pin= / ?status= query string (required for Blynk proxy).
 [[redirects]]
   from = "/api/blynk"
   to = "/.netlify/functions/blynk"
   status = 200
+  force = true
 

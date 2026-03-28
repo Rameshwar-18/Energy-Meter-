@@ -40,6 +40,15 @@ This repo includes:
 - `netlify/functions/blynk.js` (serverless API)
 - `netlify.toml` redirect so the app can call `/api/blynk`
 
+### If `/api/blynk` returns 500 on Netlify
+
+1. Open **Netlify → Site → Site configuration → Environment variables**.
+2. Add **`BLYNK_TOKEN`** (recommended) with your Blynk auth token value.
+3. Scope: **Production** (and **Deploy previews** if you use them).
+4. **Trigger redeploy** (Deploys → Trigger deploy → Clear cache and deploy site).
+
+Without this, the serverless function has no token and returns HTTP 500.
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

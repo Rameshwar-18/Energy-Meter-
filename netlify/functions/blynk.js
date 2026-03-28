@@ -1,6 +1,14 @@
+function getToken() {
+  const raw =
+    process.env.BLYNK_TOKEN ||
+    process.env.VITE_BLYNK_TOKEN ||
+    process.env.BLYNK_AUTH_TOKEN
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
 exports.handler = async (event) => {
   try {
-    const token = process.env.BLYNK_TOKEN || process.env.VITE_BLYNK_TOKEN
+    const token = getToken()
     const params = event.queryStringParameters || {}
     const pin = params.pin
     const status = params.status
@@ -9,7 +17,10 @@ exports.handler = async (event) => {
       return {
         statusCode: 500,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Missing BLYNK_TOKEN environment variable' }),
+        body: JSON.stringify({
+          error:
+            'Missing Blynk token. In Netlify: Site settings → Environment variables → add BLYNK_TOKEN (or VITE_BLYNK_TOKEN) for Production, then redeploy.',
+        }),
       }
     }
 

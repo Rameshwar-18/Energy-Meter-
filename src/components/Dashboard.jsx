@@ -135,7 +135,7 @@ export default function Dashboard() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <MetricCard
               title="Voltage"
               value={data.voltage}
@@ -155,7 +155,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <MetricCard
               title="Current"
               value={data.current}
@@ -175,7 +175,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <MetricCard
               title="Power"
               value={data.power}

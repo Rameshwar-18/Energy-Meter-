@@ -65,7 +65,7 @@ export default function MetricChart({
           : 'rgba(79,70,229,0.95)'
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur hover:border-blue-300 hover:bg-blue-50/40 hover:shadow-md dark:border-slate-800/60 dark:bg-slate-900/20 dark:hover:border-blue-600/60 dark:hover:bg-slate-900/30 dark:hover:shadow-lg">
+    <div className="min-w-0 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur hover:border-blue-300 hover:bg-blue-50/40 hover:shadow-md dark:border-slate-800/60 dark:bg-slate-900/20 dark:hover:border-blue-600/60 dark:hover:bg-slate-900/30 dark:hover:shadow-lg">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -78,8 +78,8 @@ export default function MetricChart({
         <div className="text-xs text-slate-600 dark:text-slate-500">Updates every 2 seconds</div>
       </div>
 
-      <div className="h-56 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-56 w-full min-w-0">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid stroke={grid} strokeDasharray="3 3" />
             <XAxis
