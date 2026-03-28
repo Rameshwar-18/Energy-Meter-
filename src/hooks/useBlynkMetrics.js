@@ -8,7 +8,44 @@ function clientToken() {
   return typeof t === 'string' ? t.trim() : ''
 }
 
+/** Production + token in bundle → talk to Blynk only (no /api spam if Netlify function is misconfigured). */
+function shouldUseDirectBlynkOnly() {
+  return import.meta.env.PROD && Boolean(clientToken())
+}
+
+async function fetchStatusDirect({ signal }) {
+  const token = clientToken()
+  const res = await fetch(`${BLYNK_STATUS}?token=${encodeURIComponent(token)}`, {
+    signal,
+  })
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(`Blynk status ${res.status}: ${msg || res.statusText}`)
+  }
+  const txt = (await res.text()).trim().toLowerCase()
+  return txt === 'true' || txt === '1'
+}
+
+async function fetchPinDirect({ pin, signal }) {
+  const token = clientToken()
+  const res = await fetch(
+    `${BLYNK_GET}?token=${encodeURIComponent(token)}&${pin}`,
+    { signal },
+  )
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(`Blynk ${res.status}: ${msg || res.statusText}`)
+  }
+  const txt = await res.text()
+  const asNumber = Number(txt)
+  return Number.isFinite(asNumber) ? asNumber : txt
+}
+
 async function fetchHardwareConnected({ signal }) {
+  if (shouldUseDirectBlynkOnly()) {
+    return fetchStatusDirect({ signal })
+  }
+
   const res = await fetch('/api/blynk?status=1', { signal })
   if (res.ok) {
     const txt = (await res.text()).trim().toLowerCase()
@@ -21,18 +58,14 @@ async function fetchHardwareConnected({ signal }) {
     throw new Error(`Blynk status error ${res.status}: ${msg || res.statusText}`)
   }
 
-  const direct = await fetch(`${BLYNK_STATUS}?token=${encodeURIComponent(token)}`, {
-    signal,
-  })
-  if (!direct.ok) {
-    const msg = await direct.text().catch(() => '')
-    throw new Error(`Blynk status (direct) ${direct.status}: ${msg || direct.statusText}`)
-  }
-  const txt = (await direct.text()).trim().toLowerCase()
-  return txt === 'true' || txt === '1'
+  return fetchStatusDirect({ signal })
 }
 
 async function fetchPinValue({ pin, signal }) {
+  if (shouldUseDirectBlynkOnly()) {
+    return fetchPinDirect({ pin, signal })
+  }
+
   const res = await fetch(`/api/blynk?pin=${pin}`, { signal })
   if (res.ok) {
     const txt = await res.text()
@@ -46,17 +79,7 @@ async function fetchPinValue({ pin, signal }) {
     throw new Error(`Blynk error ${res.status}: ${msg || res.statusText}`)
   }
 
-  const direct = await fetch(
-    `${BLYNK_GET}?token=${encodeURIComponent(token)}&${pin}`,
-    { signal },
-  )
-  if (!direct.ok) {
-    const msg = await direct.text().catch(() => '')
-    throw new Error(`Blynk error (direct) ${direct.status}: ${msg || direct.statusText}`)
-  }
-  const txt = await direct.text()
-  const asNumber = Number(txt)
-  return Number.isFinite(asNumber) ? asNumber : txt
+  return fetchPinDirect({ pin, signal })
 }
 
 export default function useBlynkMetrics({

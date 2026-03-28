@@ -78,8 +78,8 @@ export default function MetricChart({
         <div className="text-xs text-slate-600 dark:text-slate-500">Updates every 2 seconds</div>
       </div>
 
-      <div className="h-56 w-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+      <div className="w-full min-w-0" style={{ height: 224 }}>
+        <ResponsiveContainer width="100%" height={224} minWidth={0}>
           <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid stroke={grid} strokeDasharray="3 3" />
             <XAxis

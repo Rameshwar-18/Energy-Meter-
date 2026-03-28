@@ -109,9 +109,6 @@ export default function Dashboard() {
             <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
               Overview
             </h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Live metrics from your ESP32 energy meter (Blynk V0/V1/V2)
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
