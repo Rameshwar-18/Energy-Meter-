@@ -49,6 +49,8 @@ This repo includes:
 
 Without this, the serverless function has no token and returns HTTP 500.
 
+**Workaround (already in code):** If you set **`VITE_BLYNK_TOKEN`** in Netlify **build** environment variables and redeploy, the app will **fall back to calling Blynk directly** from the browser when `/api/blynk` fails. Prefer fixing **`BLYNK_TOKEN`** for the function so the token is not visible in the client bundle/network.
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

@@ -1,23 +1,60 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+const BLYNK_GET = 'https://blynk.cloud/external/api/get'
+const BLYNK_STATUS = 'https://blynk.cloud/external/api/isHardwareConnected'
+
+function clientToken() {
+  const t = import.meta.env.VITE_BLYNK_TOKEN
+  return typeof t === 'string' ? t.trim() : ''
+}
+
 async function fetchHardwareConnected({ signal }) {
   const res = await fetch('/api/blynk?status=1', { signal })
-  if (!res.ok) {
+  if (res.ok) {
+    const txt = (await res.text()).trim().toLowerCase()
+    return txt === 'true' || txt === '1'
+  }
+
+  const token = clientToken()
+  if (!token) {
     const msg = await res.text().catch(() => '')
     throw new Error(`Blynk status error ${res.status}: ${msg || res.statusText}`)
   }
-  const txt = (await res.text()).trim().toLowerCase()
+
+  const direct = await fetch(`${BLYNK_STATUS}?token=${encodeURIComponent(token)}`, {
+    signal,
+  })
+  if (!direct.ok) {
+    const msg = await direct.text().catch(() => '')
+    throw new Error(`Blynk status (direct) ${direct.status}: ${msg || direct.statusText}`)
+  }
+  const txt = (await direct.text()).trim().toLowerCase()
   return txt === 'true' || txt === '1'
 }
 
 async function fetchPinValue({ pin, signal }) {
-  // Use our same-origin API to avoid CORS and to support Vercel deployments.
   const res = await fetch(`/api/blynk?pin=${pin}`, { signal })
-  if (!res.ok) {
+  if (res.ok) {
+    const txt = await res.text()
+    const asNumber = Number(txt)
+    return Number.isFinite(asNumber) ? asNumber : txt
+  }
+
+  const token = clientToken()
+  if (!token) {
     const msg = await res.text().catch(() => '')
     throw new Error(`Blynk error ${res.status}: ${msg || res.statusText}`)
   }
-  const txt = await res.text()
+
+  const direct = await fetch(
+    `${BLYNK_GET}?token=${encodeURIComponent(token)}&${pin}`,
+    { signal },
+  )
+  if (!direct.ok) {
+    const msg = await direct.text().catch(() => '')
+    throw new Error(`Blynk error (direct) ${direct.status}: ${msg || direct.statusText}`)
+  }
+  const txt = await direct.text()
   const asNumber = Number(txt)
   return Number.isFinite(asNumber) ? asNumber : txt
 }
@@ -79,4 +116,3 @@ export default function useBlynkMetrics({
 
   return { data, loading, error, lastUpdated, online }
 }
-
