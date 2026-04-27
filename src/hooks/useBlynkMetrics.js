@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const BLYNK_GET = 'https://blynk.cloud/external/api/get'
+const BLYNK_UPDATE = 'https://blynk.cloud/external/api/update'
 const BLYNK_STATUS = 'https://blynk.cloud/external/api/isHardwareConnected'
 
 function clientToken() {
@@ -82,14 +83,55 @@ async function fetchPinValue({ pin, signal }) {
   return fetchPinDirect({ pin, signal })
 }
 
+async function writePinDirect({ pin, value, signal }) {
+  const token = clientToken()
+  const url = `${BLYNK_UPDATE}?token=${encodeURIComponent(token)}&${pin}=${encodeURIComponent(value)}`
+  const res = await fetch(url, { signal })
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(`Blynk write ${res.status}: ${msg || res.statusText}`)
+  }
+  return true
+}
+
+async function writePinValue({ pin, value, signal }) {
+  if (shouldUseDirectBlynkOnly()) {
+    return writePinDirect({ pin, value, signal })
+  }
+
+  const res = await fetch(
+    `/api/blynk?write=1&pin=${pin}&value=${encodeURIComponent(value)}`,
+    { signal },
+  )
+  if (res.ok) return true
+
+  const token = clientToken()
+  if (!token) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(`Blynk write error ${res.status}: ${msg || res.statusText}`)
+  }
+
+  return writePinDirect({ pin, value, signal })
+}
+
 export default function useBlynkMetrics({
   intervalMs = 2000,
-  pins = { voltage: 'V0', current: 'V1', power: 'V2' },
+  pins = {
+    voltage: 'V0',
+    current: 'V1',
+    power: 'V2',
+    energy: 'V3',
+    cost: 'V4',
+    relay: 'V5',
+  },
 }) {
   const [data, setData] = useState({
     voltage: null,
     current: null,
     power: null,
+    energy: null,
+    cost: null,
+    relay: null,
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -98,6 +140,7 @@ export default function useBlynkMetrics({
 
   const tickRef = useRef(0)
   const canFetch = useMemo(() => true, [])
+  const relayPin = pins.relay
 
   useEffect(() => {
     let timer = null
@@ -109,14 +152,17 @@ export default function useBlynkMetrics({
         if (tick === 1) setLoading(true)
         setError(null)
 
-        const [connected, voltage, current, power] = await Promise.all([
+        const [connected, voltage, current, power, energy, cost, relay] = await Promise.all([
           fetchHardwareConnected({ signal: controller.signal }),
           fetchPinValue({ pin: pins.voltage, signal: controller.signal }),
           fetchPinValue({ pin: pins.current, signal: controller.signal }),
           fetchPinValue({ pin: pins.power, signal: controller.signal }),
+          fetchPinValue({ pin: pins.energy, signal: controller.signal }),
+          fetchPinValue({ pin: pins.cost, signal: controller.signal }),
+          fetchPinValue({ pin: pins.relay, signal: controller.signal }),
         ])
 
-        setData({ voltage, current, power })
+        setData({ voltage, current, power, energy, cost, relay })
         setLastUpdated(new Date())
         setOnline(Boolean(connected))
       } catch (e) {
@@ -135,7 +181,31 @@ export default function useBlynkMetrics({
       clearInterval(timer)
       controller.abort()
     }
-  }, [canFetch, intervalMs, pins.voltage, pins.current, pins.power])
+  }, [canFetch, intervalMs, pins.voltage, pins.current, pins.power, pins.energy, pins.cost, pins.relay])
 
-  return { data, loading, error, lastUpdated, online }
+  const setRelay = useCallback(
+    async (on) => {
+      const value = on ? 1 : 0
+      // Optimistic local update so the UI feels instant.
+      setData((d) => ({ ...d, relay: value }))
+      try {
+        await writePinValue({ pin: relayPin, value })
+        return { ok: true }
+      } catch (e) {
+        // Roll back on failure.
+        setData((d) => ({ ...d, relay: on ? 0 : 1 }))
+        return { ok: false, error: e instanceof Error ? e : new Error(String(e)) }
+      }
+    },
+    [relayPin],
+  )
+
+  return {
+    data,
+    lastUpdated,
+    loading,
+    error,
+    online,
+    setRelay,
+  }
 }

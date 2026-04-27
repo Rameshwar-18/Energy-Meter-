@@ -4,7 +4,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
@@ -24,6 +23,7 @@ export default function MetricChart({
   valueKey,
   isDark,
   accent = 'indigo',
+  windowLabel = 'last 60s',
 }) {
   const data = useMemo(
     () =>
@@ -69,7 +69,7 @@ export default function MetricChart({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-sm text-slate-600 dark:text-slate-400">
-            {title} (last 60s)
+            {title} ({windowLabel})
           </div>
           <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Trend
@@ -94,16 +94,6 @@ export default function MetricChart({
               axisLine={{ stroke: axis }}
               tickLine={{ stroke: axis }}
               width={40}
-            />
-            <Tooltip
-              contentStyle={{
-                background: 'rgba(2,6,23,0.92)',
-                border: '1px solid rgba(148,163,184,0.25)',
-                borderRadius: 12,
-                color: 'rgba(226,232,240,0.9)',
-              }}
-              labelStyle={{ color: 'rgba(226,232,240,0.7)' }}
-              formatter={(value) => [`${Number(value).toFixed(2)} ${unit}`, title]}
             />
             <Line
               type="monotone"

@@ -35,6 +35,7 @@ npm run dev
 - Publish directory: `dist`
 - Environment variables:
   - `BLYNK_TOKEN` (recommended) or `VITE_BLYNK_TOKEN`
+  - `GEMINI_API_KEY` (for AI predictive maintenance)
 
 This repo includes:
 - `netlify/functions/blynk.js` (serverless API)
@@ -50,6 +51,20 @@ This repo includes:
 Without this, the serverless function has no token and returns HTTP 500.
 
 **Workaround (already in code):** Add **`VITE_BLYNK_TOKEN`** in Netlify **build** environment variables and redeploy. In **production**, the app will then call **Blynk directly** (and **skip** `/api/blynk`) so you avoid broken-function **500** noise in the console. Prefer **`BLYNK_TOKEN`** on the function for production if you do not want the token in the client bundle.
+
+## AI Predictive Maintenance (Gemini)
+
+This repo includes `netlify/functions/predict.js`, which calls the Gemini API **server-side** (your API key is never exposed to the browser).
+
+- Add to `.env` for local dev:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+- In Netlify: Site configuration → Environment variables → add `GEMINI_API_KEY` → redeploy.
+
+If the function fails, the UI will show **“AI unavailable”** and the rest of the dashboard keeps working.
 
 # React + Vite
 

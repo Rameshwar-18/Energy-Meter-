@@ -8,6 +8,10 @@ export default defineConfig(({ mode }) => {
   const token = env.BLYNK_TOKEN || env.VITE_BLYNK_TOKEN
 
   return {
+    server: {
+      host: true,
+      port: 5173,
+    },
     plugins: [
       react(),
       tailwindcss(),
@@ -19,6 +23,8 @@ export default defineConfig(({ mode }) => {
               const url = new URL(req.url ?? '', 'http://localhost')
               const pin = url.searchParams.get('pin')
               const status = url.searchParams.get('status')
+              const write = url.searchParams.get('write')
+              const value = url.searchParams.get('value')
 
               if (!token) {
                 res.statusCode = 500
@@ -46,6 +52,24 @@ export default defineConfig(({ mode }) => {
                 return
               }
 
+              // Write a value to a virtual pin (used by relay toggle).
+              if (write === '1') {
+                if (value === null) {
+                  res.statusCode = 400
+                  res.setHeader('Content-Type', 'application/json')
+                  res.end(JSON.stringify({ error: 'Missing value. Use ?write=1&pin=V5&value=1' }))
+                  return
+                }
+                const upstream = await fetch(
+                  `https://blynk.cloud/external/api/update?token=${token}&${pin}=${encodeURIComponent(value)}`,
+                )
+                const text = await upstream.text()
+                res.statusCode = upstream.status
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+                res.end(text)
+                return
+              }
+
               const upstream = await fetch(
                 `https://blynk.cloud/external/api/get?token=${token}&${pin}`,
               )
@@ -60,6 +84,7 @@ export default defineConfig(({ mode }) => {
               res.end(JSON.stringify({ error: e instanceof Error ? e.message : 'Server error' }))
             }
           })
+
         },
       },
     ],
